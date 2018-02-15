@@ -22,5 +22,9 @@
 hs_err_pid*
 
 /.idea
+!/.idea/compiler.xml
+!/.idea/misc.xml
+!/.idea/modules.xml
+!/.idea/vcs.xml
 /out
 /venv
