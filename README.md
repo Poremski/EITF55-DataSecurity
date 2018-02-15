@@ -14,7 +14,7 @@ that were applied both in the exercises and in the assignments, thus forming the
 source code presented during the course of the 3<sup>rd</sup> period of studies 
 of the year 2018 at Campus Helsingborg at the University of Lund in Sweden.
 
-# EITF55 — Cibereguridad de tecnologías de la información
+# EITF55 — Ciberseguridad de tecnologías de la información
 El objetivo del curso es dar a los estudiantes un conocimiento sólido de los 
 problemas de seguridad que deben ser resueltos en y alrededor del uso de sistemas 
 informáticos para operar tales sistemas en un entorno de red. Este repositorio 
