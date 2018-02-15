@@ -25,8 +25,8 @@ Helsingburgo en Suecia.
 
 # EITF55 – Sekurado de informacioj
 La objektivo de la kurso estas doni al la lernantoj sciigon pri la sekurecaj 
-problemoj kiu devas esti solvita en kaj ĉirkaŭ la uzo de komputilaj sistemoj 
-funkcii tian sistemoj en interreta reto. Ĉi tiu deponejo enhavas kodon de 
+problemoj kiuj devas esti solvitaj en kaj ĉirkaŭ la uzo de komputilaj sistemoj por 
+operacii tiajn sistemojn en interreta reto-medio. Ĉi tiu deponejo enhavas kodon de 
 programoj, kiuj estis aplikitaj en la ekzercoj kaj en la submetiĝoj, formante 
 la fontkodon prezentitan dum la 3-a periodo de studoj de la jaro 2018 ĉe la 
 Universitato de Lundo de Kampuso de Helsingborgo en Svedujo.
