@@ -14,6 +14,9 @@ fun time_rabin_miller(n: BigInteger,  benchmarkIter: Int?, f: (n: BigInteger, it
     assert(threadMX.isCurrentThreadCpuTimeSupported)
     threadMX.isThreadCpuTimeEnabled = true
     val start = threadMX.currentThreadCpuTime
+
+    val END = valueOf(benchmarkIter as Long)
+
     for (j in 0L until its step 2) {
         f(n + j.toBigInteger(), 50)
     }
@@ -26,9 +29,7 @@ fun probablePrime(n: BigInteger, k: Int): Boolean {
     require(n.lowestSetBit == 0 && n > TWO, {
         println("Number needs to be odd and greater than 2: Numbers lowest set bit ${n.lowestSetBit} and ${n}")
     })
-    require(n.toInt() > k, {
-        println("Iterations of k, 'a base' > n, does not make sense.")
-    })
+    //  require(n.toInt() > k, { println("Iterations of k, 'a base' > n, does not make sense.") })
     val nMinusOne = n - ONE
     // var r = nMinusOne.lowestSetBit
     var r = 0
@@ -47,7 +48,7 @@ fun probablePrime(n: BigInteger, k: Int): Boolean {
         require(aBase < (n))
         aList.add(aBase)
         var x = aBase.modPow(s, n)
-        if (x == ONE || x == nMinusOne) continue // verifiera med att iterera k gånger, så att chansen för att n är komposit blir =(1/4)^k
+        if (x == ONE || x == nMinusOne) continue@outer // verifiera med att iterera k gånger, så att chansen för att n är komposit blir =(1/4)^k
         loop@ for (j in 1 until (r)) {
             x = x.modPow(TWO, n)
             when (x) {
@@ -66,6 +67,11 @@ fun probablePrime(n: BigInteger, k: Int): Boolean {
 
 fun main(args: Array<String>) {
 
+
+    val rnd = Random(Long.MAX_VALUE xor Long.MAX_VALUE/2-23124154L)
+    var st = BigInteger(512, rnd)
+    val nd = st + valueOf(1000000)
+
     runPrimeFind(run {
         val rng: (BigIntegerProgression) = if (args.size >= 2) {
             val begin = args[0].toBigInteger()
@@ -78,10 +84,12 @@ fun main(args: Array<String>) {
             val threeCK = valueOf(300_001L)
             val tenM = valueOf(10_000_001L)
             threeCK..tenM step 2
+            st..nd
         }
         rng
     })
-    // benchmark(::probablePrime)
+    runPrimeFind(BigInteger.valueOf(2000_000L)..BigInteger.valueOf(200_000_000_000L))
+    // benchmark()
 }
 
 fun runPrimeFind(bigIntRange: BigIntegerProgression) {
@@ -100,8 +108,14 @@ fun runPrimeFind(bigIntRange: BigIntegerProgression) {
 // probablePrimeSlow: println(args.size)(BigInteger, Int) -> Boolean, probablePrime: (BigInteger, Int) -> Boolean
 fun benchmark() {
 //    time_rabin_miller(2315095910041209493.toBigInteger(), ::probablePrime)
-    val rnd = Random(Long.MAX_VALUE xor Long.MAX_VALUE/2-23124154L)
     time_rabin_miller(BigInteger("231509591004120949323150959100666666493131"), 1000, ::probablePrime)
     time_rabin_miller(BigInteger("231509591004120949323150959100412094999999931231509591004120949323150959100412094999999931231509591004120949323150959100412094999999931231509591004120949323150959100412094999999931231509591004120949323150959100412098888887231231509591004120949323150959100412098888887231231509591004120949323150959100412094999999931231509591004120949323150959100412094999999931"), 100, ::probablePrime)
-    time_rabin_miller(BigInteger(512, rnd), 50, ::probablePrime)
+    val rnd = Random(Long.MAX_VALUE xor Long.MAX_VALUE/2-23124154L)
+    val st = BigInteger(512, rnd)
+    val start = if (st.lowestSetBit != 0) {
+        st
+    } else {
+        st + valueOf(1)
+    }
+    time_rabin_miller(start, 150, ::probablePrime)
 }
