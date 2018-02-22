@@ -111,7 +111,7 @@ public class RSA {
             .limit(100)
             .collect(Collectors.toList());
         Long endtime = threadMX.getCurrentThreadUserTime();
-        System.out.println(String.format("It took %d to find 100 2048-bit primes ms", endtime-starttime/1000000));
+        System.out.println(String.format("It took %d to find 100 2048-bit primes ms", (endtime-starttime)/1000000));
         return primes;
     }
 
