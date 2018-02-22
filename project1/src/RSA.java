@@ -4,8 +4,14 @@
     Written 2018 for a lab at school.
 */
 
+import org.jetbrains.annotations.NotNull;
+
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.math.BigInteger;
-import java.util.Random;
+import java.util.*;
+import java.util.stream.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static java.math.BigInteger.*;
 
@@ -18,17 +24,33 @@ public class RSA {
     */
     public static final int[] aBases = new int[]{2,3,5,7,11,13,17,19,23,29,31,37,41};
     public static void main(String[] args) {
-        Stream<BigInteger> infiniteStream = Stream.iterate(ZERO, i -> i.add(TWO));
-        RSA rsa = new RSA();
-        // tar tal mellan 300,000 och 3,000,000 och testar ifall de är primtal.
-        // skulle lika väl välja "3_000_000_000_000_000_000_000_000_000_000_000_000_000_000 och 3_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000"
-        // här, med hjälp av klassen BigIntegerProgression.
-        BigIntegerProgression bigIntegerProgression =
-            new BigIntegerProgression(BigInteger.valueOf(3L), BigInteger.valueOf(100L), 2L);
-        bigIntegerProgression.forEach((BigInteger i) -> {
-            if(rsa.isMillerRabin(i, 35))
-                System.out.println("Prob prime: " + i.toString());
-        });
+        List<String> lst = Stream.iterate(valueOf(1000001), i -> i.add(TWO)).filter(RSA::isMillerRabin).map(BigInteger::toString).limit(100).collect(Collectors.toList());;
+        Random rnd = new Random(Long.MAX_VALUE ^ System.currentTimeMillis());
+        BigInteger begin;
+        do {
+            begin = new BigInteger(512, rnd);
+        } while(begin.getLowestSetBit() != 0);
+        List<String> stringList512 = generate_100_512bit_primes(begin);
+        for (String str : stringList512) System.out.println(str);
+
+        do {
+            begin = new BigInteger(1024, rnd);
+        } while(begin.getLowestSetBit() != 0);
+        List<String> stringList1024 = generate_100_1024bit_primes(begin);
+        for (String str : stringList1024) System.out.println(str);
+
+        do {
+            begin = new BigInteger(2048, rnd);
+        } while(begin.getLowestSetBit() != 0);
+        List<String> stringList2048 = generate_100_2048bit_primes(begin);
+        for (String str : stringList2048) System.out.println(str);
+
+        do {
+            begin = new BigInteger(2048, rnd);
+        } while(begin.getLowestSetBit() != 0);
+        List<String> stringList2048_2 = generate_100_2048bit_primes_try_parallell(begin);
+        for (String str : stringList2048_2) System.out.println(str);
+
         System.out.println("Hello World!");
     }
     /**
@@ -36,13 +58,67 @@ public class RSA {
      * @param k - amount of witnesses, base a
      * @return - result of test for primality.
      */
-    public boolean isMillerRabin(BigInteger n, int k) {
+
+    public static List<String> generate_100_512bit_primes(BigInteger start) {
+        ThreadMXBean threadMX = ManagementFactory.getThreadMXBean();
+        Long starttime = threadMX.getCurrentThreadUserTime();
+        List<String> primes = Stream.iterate(start, i-> i.add(TWO))
+            .filter(RSA::isMillerRabin)
+            .parallel()
+            .limit(100)
+            .map(BigInteger::toString)
+            .collect(Collectors.toList());
+        Long endtime = threadMX.getCurrentThreadUserTime();
+        System.out.println(String.format("it took %d ms 100 512-bit primes", (endtime-starttime)/1000000));
+        return primes;
+    }
+    public static List<String> generate_100_1024bit_primes(BigInteger start) {
+        ThreadMXBean threadMX = ManagementFactory.getThreadMXBean();
+        Long starttime = threadMX.getCurrentThreadCpuTime();
+        List<String> primes = Stream.iterate(start, i -> i.add(TWO))
+            .filter(RSA::isMillerRabin)
+            .map(BigInteger::toString)
+            .limit(100)
+            .collect(Collectors.toList());
+        Long endtime = threadMX.getCurrentThreadCpuTime();
+        System.out.println(String.format("it took %d ms to generate 100 1024 bit primes", (endtime-starttime)/1000000));
+        return primes;
+    }
+    public static List<String> generate_100_2048bit_primes(BigInteger start) {
+        ThreadMXBean threadMX = ManagementFactory.getThreadMXBean();
+        Long starttime = threadMX.getCurrentThreadCpuTime();
+        List<String> primes = Stream
+            .iterate(start,
+                i -> i.add(TWO))
+            .filter(RSA::isMillerRabin)
+            .map(BigInteger::toString)
+            .limit(100)
+            .collect(Collectors.toList());
+        Long endtime = threadMX.getCurrentThreadCpuTime();
+        System.out.println(String.format("it took %d ms to generate 100 2048-bit primes", (endtime-starttime)/1000000));
+        return primes;
+    }
+
+    public static List<String> generate_100_2048bit_primes_try_parallell(BigInteger start) {
+        ThreadMXBean threadMX = ManagementFactory.getThreadMXBean();
+        Long starttime = threadMX.getCurrentThreadUserTime();
+        ArrayList<Integer> ararrar = new ArrayList<>();
+        List<String> primes =
+        Stream.iterate(start, i -> i.add(TWO))
+            .parallel()
+            .filter(RSA::isMillerRabin)
+            .map(BigInteger::toString)
+            .limit(100)
+            .collect(Collectors.toList());
+        Long endtime = threadMX.getCurrentThreadUserTime();
+        System.out.println(String.format("It took %d to find 100 2048-bit primes ms", endtime-starttime/1000000));
+        return primes;
+    }
+
+    public static boolean isMillerRabin(BigInteger n) {
         assert n.getLowestSetBit() == 0;
         int idx = 0;
-        int end_abases;;
-        if(n.compareTo(valueOf(2047)) < 0)
-            end_abases = 1;
-        else end_abases = aBases.length;
+        int bases[] = compute_aBases();
         // nMinusOne => n - 1 = 2^r * s
         BigInteger nMinusOne = n.subtract(ONE);
         // r is factor of 2. Since numbers are represented in two's complement, it means that
@@ -59,7 +135,7 @@ public class RSA {
         Random rnd = new Random();
         {
         Witness:
-            for (int aBase = aBases[idx]; idx < end_abases; aBase = aBases[++idx]) {
+            for (int aBase = bases[idx]; idx < 20; aBase = bases[idx++]) {
                 BigInteger x = valueOf(aBase).modPow(s , n);
                 if (x.equals(ONE) || x.equals(nMinusOne)) continue Witness;
                 for(int j = 0; j < r; ++j) {
@@ -75,5 +151,15 @@ public class RSA {
         }
     }
 
+    public static int[] compute_aBases() {
+        int a_basis[] = new int[20];
+        for(int i = 0; i < 13; ++i) {
+            a_basis[i] = aBases[i];
+        }
+        for(int i = 13; i < 20; ++i) {
+            a_basis[i] = new Random(Long.MAX_VALUE ^ System.currentTimeMillis() - 203042L).nextInt();
+        }
+        return a_basis;
+    }
 
 }
