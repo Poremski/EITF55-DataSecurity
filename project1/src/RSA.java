@@ -21,42 +21,42 @@ public class RSA {
         if n < 3,317,044,064,679,887,385,961,981,
         it is enough to test a=[2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41]
     */
-    public static final int[] aBases = new int[]{2,3,5,7,11,13,17,19,23,29,31,37,41};
+    public static final int[] aBases = new int[]{2,3,5,7,11,13,17,19,23,29,31,37,41, 2047};
     public static void main(String[] args) {
         // List<String> lst = Stream.iterate(valueOf(1000001), i -> i.add(TWO)).filter(RSA::isMillerRabin).map(BigInteger::toString).limit(100).collect(Collectors.toList());;
         Random rnd = new Random(Long.MAX_VALUE ^ System.currentTimeMillis());
         BigInteger begin;
-        do {
-            begin = new BigInteger(512, rnd);
-        } while(begin.getLowestSetBit() != 0);
-        List<String> stringList512 = generate_100_512bit_primes(begin);
-        List<String> stringList1024 = generate_100_1024bit_primes(begin);
-        List<String> stringList2048 = generate_100_2048bit_primes(begin);
+        do begin = new BigInteger(2048, rnd); while(begin.getLowestSetBit() != 0);
+        List<BigInteger> _100consecutive2048bit = generate_100_consecutive_2048bit_primes(begin);
+        do begin = new BigInteger(512, rnd); while(begin.getLowestSetBit() != 0);
+        List<BigInteger> stringList512 = generate_100_512bit_primes(begin);
+        do begin = new BigInteger(1024, rnd); while(begin.getLowestSetBit() != 0);
+        List<BigInteger> stringList1024 = generate_100_1024bit_primes(begin);
+        do begin = new BigInteger(2048, rnd); while(begin.getLowestSetBit() != 0);
+        List<BigInteger> stringList2048 = generate_100_2048bit_primes(begin);
         System.out.println("Done.");
     }
 
-    public static List<String> generate_100_512bit_primes(BigInteger start) {
+    public static List<BigInteger> generate_100_512bit_primes(BigInteger start) {
         ThreadMXBean threadMX = ManagementFactory.getThreadMXBean();
         Long starttime = threadMX.getCurrentThreadUserTime();
-        List<String> primes =
+        List<BigInteger> primes =
             Stream.iterate(start, i -> new BigInteger(512, new Random(Long.MAX_VALUE ^ System.nanoTime())))
             .filter(RSA::isMillerRabin)
             .sequential()
             .limit(100)
-            .map(BigInteger::toString)
             .collect(Collectors.toList());
         Long endtime = threadMX.getCurrentThreadUserTime();
         primes.forEach(System.out::println);
         System.out.println(String.format("it took %d ms to generate 100 512-bit primes, avg: %d ms/prime", (endtime-starttime)/1000000, (endtime-starttime)/(1000000*100)));
         return primes;
     }
-    public static List<String> generate_100_1024bit_primes(BigInteger start) {
+    public static List<BigInteger> generate_100_1024bit_primes(BigInteger start) {
         ThreadMXBean threadMX = ManagementFactory.getThreadMXBean();
         Long starttime = threadMX.getCurrentThreadCpuTime();
-        List<String> primes =
+        List<BigInteger> primes =
             Stream.iterate(start, i -> new BigInteger(1024, new Random(Long.MAX_VALUE ^ System.nanoTime())))
             .filter(RSA::isMillerRabin)
-            .map(BigInteger::toString)
             .limit(100)
             .collect(Collectors.toList());
         Long endtime = threadMX.getCurrentThreadCpuTime();
@@ -64,17 +64,30 @@ public class RSA {
         System.out.println(String.format("it took %d ms to generate 100 1024-bit primes, avg: %d ms/prime", (endtime-starttime)/1000000, (endtime-starttime)/(1000000*100)));
         return primes;
     }
-    public static List<String> generate_100_2048bit_primes(BigInteger start) {
+    public static List<BigInteger> generate_100_2048bit_primes(BigInteger start) {
         ThreadMXBean threadMX = ManagementFactory.getThreadMXBean();
         Long starttime = threadMX.getCurrentThreadCpuTime();
-        List<String> primes = Stream
+        List<BigInteger> primes = Stream
             .iterate(start,
                 i -> new BigInteger(2048, new Random(Long.MAX_VALUE ^ System.nanoTime())))
             .filter(RSA::isMillerRabin)
-            .map(BigInteger::toString)
             .limit(100)
             .collect(Collectors.toList());
         Long endtime = threadMX.getCurrentThreadCpuTime();
+        primes.forEach(System.out::println);
+        System.out.println(String.format("it took %d ms to generate 100 2048-bit primes, avg: %d ms/prime", (endtime-starttime)/1000000, (endtime-starttime)/(1000000*100)));
+        return primes;
+    }
+
+    public static List<BigInteger> generate_100_consecutive_2048bit_primes(BigInteger start) {
+        ThreadMXBean threadMX = ManagementFactory.getThreadMXBean();
+        Long starttime = threadMX.getCurrentThreadUserTime();
+        List<BigInteger> primes = Stream
+            .iterate(start, i -> i.add(TWO))
+            .filter(RSA::isMillerRabin)
+            .limit(100)
+            .collect(Collectors.toList());
+        Long endtime = threadMX.getCurrentThreadUserTime();
         primes.forEach(System.out::println);
         System.out.println(String.format("it took %d ms to generate 100 2048-bit primes, avg: %d ms/prime", (endtime-starttime)/1000000, (endtime-starttime)/(1000000*100)));
         return primes;
