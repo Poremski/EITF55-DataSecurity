@@ -10,7 +10,6 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static java.math.BigInteger.*;
@@ -24,64 +23,45 @@ public class RSA {
     */
     public static final int[] aBases = new int[]{2,3,5,7,11,13,17,19,23,29,31,37,41};
     public static void main(String[] args) {
-        List<String> lst = Stream.iterate(valueOf(1000001), i -> i.add(TWO)).filter(RSA::isMillerRabin).map(BigInteger::toString).limit(100).collect(Collectors.toList());;
+        // List<String> lst = Stream.iterate(valueOf(1000001), i -> i.add(TWO)).filter(RSA::isMillerRabin).map(BigInteger::toString).limit(100).collect(Collectors.toList());;
         Random rnd = new Random(Long.MAX_VALUE ^ System.currentTimeMillis());
         BigInteger begin;
         do {
             begin = new BigInteger(512, rnd);
         } while(begin.getLowestSetBit() != 0);
         List<String> stringList512 = generate_100_512bit_primes(begin);
-        for (String str : stringList512) System.out.println(str);
-
-        do {
-            begin = new BigInteger(1024, rnd);
-        } while(begin.getLowestSetBit() != 0);
         List<String> stringList1024 = generate_100_1024bit_primes(begin);
-        for (String str : stringList1024) System.out.println(str);
-
-        do {
-            begin = new BigInteger(2048, rnd);
-        } while(begin.getLowestSetBit() != 0);
         List<String> stringList2048 = generate_100_2048bit_primes(begin);
-        for (String str : stringList2048) System.out.println(str);
-
-        do {
-            begin = new BigInteger(2048, rnd);
-        } while(begin.getLowestSetBit() != 0);
-        List<String> stringList2048_2 = generate_100_2048bit_primes_try_parallell(begin);
-        for (String str : stringList2048_2) System.out.println(str);
-
-        System.out.println("Hello World!");
+        System.out.println("Done.");
     }
-    /**
-     * @param n - Input: n > 3, an odd integer to be tested for primality; n = 2^r * s + 1
-     * @param k - amount of witnesses, base a
-     * @return - result of test for primality.
-     */
 
     public static List<String> generate_100_512bit_primes(BigInteger start) {
         ThreadMXBean threadMX = ManagementFactory.getThreadMXBean();
         Long starttime = threadMX.getCurrentThreadUserTime();
-        List<String> primes = Stream.iterate(start, i-> i.add(TWO))
+        List<String> primes =
+            Stream.iterate(start, i -> new BigInteger(512, new Random(Long.MAX_VALUE ^ System.nanoTime())))
             .filter(RSA::isMillerRabin)
-            .parallel()
+            .sequential()
             .limit(100)
             .map(BigInteger::toString)
             .collect(Collectors.toList());
         Long endtime = threadMX.getCurrentThreadUserTime();
-        System.out.println(String.format("it took %d ms 100 512-bit primes", (endtime-starttime)/1000000));
+        primes.forEach(System.out::println);
+        System.out.println(String.format("it took %d ms to generate 100 512-bit primes, avg: %d ms/prime", (endtime-starttime)/1000000, (endtime-starttime)/(1000000*100)));
         return primes;
     }
     public static List<String> generate_100_1024bit_primes(BigInteger start) {
         ThreadMXBean threadMX = ManagementFactory.getThreadMXBean();
         Long starttime = threadMX.getCurrentThreadCpuTime();
-        List<String> primes = Stream.iterate(start, i -> i.add(TWO))
+        List<String> primes =
+            Stream.iterate(start, i -> new BigInteger(1024, new Random(Long.MAX_VALUE ^ System.nanoTime())))
             .filter(RSA::isMillerRabin)
             .map(BigInteger::toString)
             .limit(100)
             .collect(Collectors.toList());
         Long endtime = threadMX.getCurrentThreadCpuTime();
-        System.out.println(String.format("it took %d ms to generate 100 1024 bit primes", (endtime-starttime)/1000000));
+        primes.forEach(System.out::println);
+        System.out.println(String.format("it took %d ms to generate 100 1024-bit primes, avg: %d ms/prime", (endtime-starttime)/1000000, (endtime-starttime)/(1000000*100)));
         return primes;
     }
     public static List<String> generate_100_2048bit_primes(BigInteger start) {
@@ -89,33 +69,20 @@ public class RSA {
         Long starttime = threadMX.getCurrentThreadCpuTime();
         List<String> primes = Stream
             .iterate(start,
-                i -> i.add(TWO))
+                i -> new BigInteger(2048, new Random(Long.MAX_VALUE ^ System.nanoTime())))
             .filter(RSA::isMillerRabin)
             .map(BigInteger::toString)
             .limit(100)
             .collect(Collectors.toList());
         Long endtime = threadMX.getCurrentThreadCpuTime();
-        System.out.println(String.format("it took %d ms to generate 100 2048-bit primes", (endtime-starttime)/1000000));
+        primes.forEach(System.out::println);
+        System.out.println(String.format("it took %d ms to generate 100 2048-bit primes, avg: %d ms/prime", (endtime-starttime)/1000000, (endtime-starttime)/(1000000*100)));
         return primes;
     }
 
-    public static List<String> generate_100_2048bit_primes_try_parallell(BigInteger start) {
-        ThreadMXBean threadMX = ManagementFactory.getThreadMXBean();
-        Long starttime = threadMX.getCurrentThreadUserTime();
-        ArrayList<Integer> ararrar = new ArrayList<>();
-        List<String> primes =
-        Stream.iterate(start, i -> i.add(TWO))
-            .parallel()
-            .filter(RSA::isMillerRabin)
-            .map(BigInteger::toString)
-            .limit(100)
-            .collect(Collectors.toList());
-        Long endtime = threadMX.getCurrentThreadUserTime();
-        System.out.println(String.format("It took %d to find 100 2048-bit primes ms", (endtime-starttime)/1000000));
-        return primes;
-    }
 
     public static boolean isMillerRabin(BigInteger n) {
+        if(n.getLowestSetBit() != 0) return false;
         assert n.getLowestSetBit() == 0;
         int idx = 0;
         int bases[] = compute_aBases();
