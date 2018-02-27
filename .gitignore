@@ -28,3 +28,4 @@ hs_err_pid*
 !/.idea/vcs.xml
 /out
 /venv
+/bin
