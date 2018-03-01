@@ -1,3 +1,4 @@
+package RSA;
 /**
     author: Simon Farre
     email: simon.farre.x@gmail.com
@@ -11,43 +12,46 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static java.math.BigInteger.*;
-
+import static java.lang.Math.pow;
 interface BigIntGenerate {
     BigInteger randomStep(BigInteger b);
-}
-
-class App {
-    public static void main(String[] args) {
-        /**
-         *  Assignment 2.1 & 2.3 & 2.4
-         */
-        // 100 consecutive 512-bit primes
-        List<BigInteger> consecutive512bitPrimes = RSA.generate_100_primes(512, (num) -> num.add(TWO));
-        // 100 randomized 512-bit primes
-        List<BigInteger> random512bitPrimes = RSA.generate_100_primes(512, (n) -> {
-            BigInteger bi = new BigInteger(512, new Random(Long.MAX_VALUE ^ System.currentTimeMillis()));
-            return bi.getLowestSetBit() == 0 ? bi : bi.subtract(ONE);
-        });
-
-        // 100 randomized 1024-bit primes
-        List<BigInteger> random1024bitPrimes = RSA.generate_100_primes(1024, (n) -> {
-            BigInteger bi = new BigInteger(1024, new Random(Long.MAX_VALUE ^ System.currentTimeMillis()));
-            return bi.getLowestSetBit() == 0 ? bi : bi.subtract(ONE);
-        });
-
-        // 100 randomized 2048-bit primes
-        List<BigInteger> random2048bitPrimes = RSA.generate_100_primes(2048, (n) -> {
-            BigInteger bi = new BigInteger(2048, new Random(Long.MAX_VALUE ^ System.currentTimeMillis()));
-            return bi.getLowestSetBit() == 0 ? bi : bi.subtract(ONE);
-        });
-        System.out.println("Done.");
-    }
 }
 
 public class RSA {
 
     public BigInteger p, q, d;
     public long exp;    // exponent e
+
+    /**
+     * Default constructor. Returns an RSA scheme, with BigIntegers of bitsize 512
+     */
+    public RSA() {
+        this.exp = 65537; // 2^16 + 1
+        new RSA(512);
+    }
+
+    /**
+     * Construct a RSA scheme with parameters P and Q.
+     * @param P
+     * @param Q
+     */
+
+    public RSA(Long p, Long q)  {
+        new RSA(valueOf(p), valueOf(q));
+    }
+
+    public RSA(BigInteger P, BigInteger Q) {
+        BigInteger m = (P.subtract(ONE))
+                        .multiply
+                        (Q.subtract(ONE));
+        d = modInversem(valueOf(exp), m);
+    }
+
+    public RSA(int bitsize) {
+        Random r_p = new Random(Long.MAX_VALUE ^ System.currentTimeMillis());
+        Random r_q = new Random(Long.MIN_VALUE ^ System.nanoTime());
+        new RSA(new BigInteger(bitsize, r_p), new BigInteger(bitsize, r_q));
+    }
 
     public static final BigInteger TWO = ONE.add(ONE);
     static List<BigInteger> generate_100_primes(int bitSize, BigIntGenerate big) {
@@ -113,7 +117,42 @@ public class RSA {
         }
     }
 
-    private static BigInteger private_exponent() {
+    public BigInteger eea(BigInteger a, BigInteger m) {
+        BigInteger u1, u2, d1, v1, v2, d2;
+        d1 = m;
+        d2 = a;
+        u1 = v2 = ONE;
+        u2 = v1 = ZERO;
 
+        while(d2.compareTo(ZERO) != 0) {
+            BigInteger q = d1.divide(d2);
+            BigInteger t1 = u1.subtract(q.multiply(u2));
+            BigInteger t2 = v1.subtract(q.multiply(v2));
+            BigInteger t3 = d1.subtract(q.multiply(d2));
+
+            u1 = u2; v1 = v2; d1 = d2;
+            u2 = t1; v2 = t2; d2 = t3;
+        }
+        return ZERO;
+    }
+
+    public static BigInteger modInversem(BigInteger a, BigInteger m) {
+        BigInteger d1, d2, v1, v2;
+        d1 = m;
+        d2 = a;
+        v1 = ZERO; v2 = ONE;
+        BigInteger q, t1,t2,t3;
+        for (d2 = a; d2.compareTo(ZERO) != 0; d2 = t3) {
+            q = d1.divide(d2);
+            t2 = v1.subtract(q.multiply(v2));
+            t3 = d1.subtract(q.multiply(d2));
+            v1 = v2;
+            d1 = d2;
+            v2 = t2;
+        }
+        BigInteger v = v1;
+        BigInteger d = d1;
+        if(v.compareTo(ZERO) < 0) return v.add(m);
+        return v;
     }
 }
