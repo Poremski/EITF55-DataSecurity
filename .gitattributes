@@ -1,5 +1,11 @@
 *           text=auto
-*.java      -text
-*.md        -text
+*.java      text
+*.md        text
 *.pdf       diff=astextplain
-*.py        -text
+*.py        text
+*.jrk       binary
+*.csr       text
+*.cer       text
+*.txt       text
+*.key       text
+*.tk        text
