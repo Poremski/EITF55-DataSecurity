@@ -70,7 +70,7 @@ public class RSA {
         return this.d;
     }
     // for testing purpose, _only_
-    RSA(int keysize, BigInteger p, BigInteger q) {
+    RSA(BigInteger p, BigInteger q) {
         this.p = p;
         this.q = q;
         BigInteger m =  (p.subtract(ONE))
