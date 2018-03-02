@@ -9,3 +9,5 @@
 *.txt       text
 *.key       text
 *.tk        text
+*.iml       text
+*.xml       text
