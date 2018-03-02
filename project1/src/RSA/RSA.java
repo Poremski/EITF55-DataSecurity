@@ -1,87 +1,88 @@
 /*
 * author: Simon Farre
 * email: simon.farre.x@gmail.com
-* Written 2018 for a lab at school.
 */
 package RSA;
 
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 import static java.math.BigInteger.*;
 import static java.lang.System.nanoTime;
 import static java.lang.System.currentTimeMillis;
-interface BigIntGenerate {
-    BigInteger randomStep(BigInteger b);
-}
+import static java.util.stream.Stream.iterate;
 
 public class RSA {
 
     private static final BigInteger TWO = ONE.add(ONE);
-
+    // p and q should be discarded after e, d and N is calculated, but for purposes of
+    // printing values in project, they are kept here.
     private BigInteger p, q, d;
     private BigInteger e = TWO.pow(16).add(ONE); // 2^16 + 1
     private BigInteger N;
-
+    public BigInteger getN() { return this.N;}
     @Override
     public String toString() {
         return "RSA {" +
-              "\n" + "Size: " + p.bitLength()   + "\tp=" + p +
-            ", \n" + "Size: " + q.bitLength() + "\tq=" + q +
-            ", \n" + "Size: " + d.bitLength() + "\td=" + d +
-            ", \n" + "Size: " + e.bitLength() + "\te=" + e +
-            ", \n" + "Size: " + N.bitLength() + "\tN=" + N +
+              "\n\t" + "Size: " + p.bitLength() + "\t p=" + p +
+            ", \n\t" + "Size: " + q.bitLength() + "\t q=" + q +
+            ", \n\t" + "Size: " + d.bitLength() + "\t d=" + d +
+            ", \n\t" + "Size: " + e.bitLength() + "\t e=" + e +
+            ", \n\t" + "Size: " + N.bitLength() + "\t N=" + N +
             "\n}";
     }
-
-    /**
-     * Default constructor. Returns an RSA scheme, with BigIntegers of bitsize 512
-     */
-    public RSA() throws Exception {
-        this.e = TWO.pow(16).add(ONE); // 2^16 + 1
-        new RSA(512);
-    }
-
-    public void setE(BigInteger e) { this.e = e; }
-
-    private RSA(BigInteger P, BigInteger Q) throws Exception {
-        this.p = P;
-        this.q = Q;
-        BigInteger m = (P.subtract(ONE))
-                        .multiply
-                        (Q.subtract(ONE));
-        this.N = P.multiply(Q);
-        d = modInversem(e, m);
-        assert(e.multiply(d).mod(m).compareTo(ONE) == 0);
-        if(!(e.multiply(d).mod(m).compareTo(ONE) == 0)) {
-            System.out.println("Construction of RSA scheme failed");
-            throw new Exception("RSA Construction of RSA scheme failed");
-        }
-        this.N = p.multiply(q);
-    }
-
-    RSA(int keyBitSize) throws Exception {
-        BigInteger _q;
-        BigInteger _p;
-        do {
-            _q = new BigInteger(keyBitSize, new Random(Long.MAX_VALUE ^ nanoTime()));
-        } while(!isMillerRabin(_q));
-        do {
-            _p = new BigInteger(keyBitSize, new Random(Long.MAX_VALUE ^ currentTimeMillis()));
-        } while(!isMillerRabin(_p));
+    static private BigInteger[] generatePrimePair(final int keySize, App.BigIntGenerate bigen) {
+        Stack<BigInteger> stack = new Stack<>();
+        // Set<BigInteger> primes =
+            iterate(new BigInteger(keySize,
+                new Random(Long.MAX_VALUE ^ nanoTime())),
+            bigen::randomStep)
+            .filter((b) -> b.bitLength() == keySize)
+            .filter(RSA::isMillerRabin)
+            .limit(2)
+            .collect(Collectors.toSet())
+            .forEach(stack::push);
         System.out.println("Done generating p and q");
-        this.p = _p;
-        this.q = _q;
+        return new BigInteger[]{stack.pop(), stack.pop()};
+    }
+
+    RSA(int keySize) {
+        BigInteger primes[] = generatePrimePair(keySize, b -> new BigInteger(keySize, new Random(Long.MAX_VALUE ^ nanoTime())));
+        this.p = primes[0];
+        this.q = primes[1];
         BigInteger m = (p.subtract(ONE))
             .multiply
                 (q.subtract(ONE));
         this.N = p.multiply(q);
         d = modInversem(e, m);
-        assert((e.multiply(d)).mod(m).compareTo(ONE) == 0);
+        // ---- !  e x d ≡ 1 (mod (p-1)(q-1)) ! ----
+        assert e.multiply(d).mod(m).compareTo(ONE) == 0;
+        // -----------------------------------------
+
         if(!(e.multiply(d).mod(m).compareTo(ONE) == 0)) {
             System.out.println("Construction of RSA scheme failed");
-            throw new Exception("RSA Construction of RSA scheme failed");
+        }
+        this.N = p.multiply(q);
+    }
+
+    public BigInteger getD() {
+        return this.d;
+    }
+    // for testing purpose, _only_
+    RSA(int keysize, BigInteger p, BigInteger q) {
+        this.p = p;
+        this.q = q;
+        BigInteger m =  (p.subtract(ONE))
+                        .multiply
+                        (q.subtract(ONE));
+        this.N = p.multiply(q);
+        d = modInversem(e, m);
+        // ---- !  e x d ≡ 1 (mod (p-1)(q-1)) ! ----
+        assert e.multiply(d).mod(m).compareTo(ONE) == 0;
+        // -----------------------------------------
+        if(!(e.multiply(d).mod(m).compareTo(ONE) == 0)) {
+            System.out.println("Construction of RSA scheme failed");
         }
         this.N = p.multiply(q);
     }
@@ -132,8 +133,6 @@ public class RSA {
             return true;
         }
     }
-
-    public BigInteger getN() { return this.N;}
     public static BigInteger modInversem(BigInteger a, BigInteger m) {
         BigInteger d1, v1, v2;
         d1 = m;
